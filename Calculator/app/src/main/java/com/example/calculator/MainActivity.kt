@@ -102,18 +102,19 @@ class MainActivity : AppCompatActivity() {
             if (s != "") {
                 operation.text = s.substring(0, s.length - 1)
             }
-            ac.setOnClickListener {
-                operation.text = ""
-                result.text = ""
-            }
-            degree.setOnClickListener { operation.append("^") }
+        }
+        ac.setOnClickListener {
+            operation.text = ""
+            result.text = ""
+        }
 
-            result.setOnClickListener {
-                val restext = result.text.toString()
-                if (restext != "Error" && restext != "") {
-                    operation.text = restext
-                    result.text = ""
-                }
+        degree.setOnClickListener { operation.append("^") }
+
+        result.setOnClickListener {
+            val restext = result.text.toString()
+            if (restext != "Error" && restext != "") {
+                operation.text = restext
+                result.text = ""
             }
         }
     }
