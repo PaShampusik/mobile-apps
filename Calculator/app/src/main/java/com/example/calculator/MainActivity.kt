@@ -1,26 +1,31 @@
 package com.example.calculator
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent.getActivity
 import android.content.Context
 import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Message
 import android.util.Log
-import android.view.MenuItem
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import net.objecthunter.exp4j.ExpressionBuilder
 import kotlin.math.sqrt
-import android.widget.Switch
-
 
 
 class MainActivity : AppCompatActivity() {
@@ -33,13 +38,16 @@ class MainActivity : AppCompatActivity() {
     private var lastAcceleration = 0f
 
     private lateinit var themeSwitch: Switch
+    private lateinit var button: Button
     private lateinit var result: TextView
     private lateinit var operation: TextView
 
     private var isDarkTheme: Boolean = false
     var db = FirebaseFirestore.getInstance()
     var themeRef = db.collection("themes").document("userTheme")
+    var historyRef = db.collection("history").document("operations")
 
+    var history_counter = 0
     private fun setThemeColors(isDarkTheme: Boolean) {
         val primaryColor: Int
         val secondaryColor: Int
@@ -142,6 +150,29 @@ class MainActivity : AppCompatActivity() {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         themeSwitch = findViewById(R.id.themeSwitch)
 
+        historyRef.get().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val document = task.result
+                if (document.exists()) {
+                    history_counter = document.data?.size ?: 0
+                }
+            } else {
+                Log.e("Firestore", "Error getting document", task.exception)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "channel_id",
+                "Channel Name",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            val notificationManager = getSystemService(
+                NotificationManager::class.java
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
         themeRef.get().addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val document = task.result
@@ -168,6 +199,31 @@ class MainActivity : AppCompatActivity() {
 
         result = findViewById<TextView>(R.id.result)
         operation = findViewById<TextView>(R.id.operation)
+
+        val button = findViewById<Button>(R.id.history)
+
+// Привяжите листенер к кнопке
+        button.setOnClickListener {
+            historyRef.get()
+                .addOnSuccessListener { documentSnapshot ->
+                    if (documentSnapshot.exists()) {
+                        val operationsData = documentSnapshot.data
+                        // Перебор всех записей
+                        if (operationsData != null) {
+                            for ((key, value) in operationsData) {
+                                if (key.toString() == (history_counter - 1).toString()){
+                                    operation.text = value.toString()
+                                }
+                            }
+                        }
+                    } else {
+                        Log.e("Firestore", "Error getting document")
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("Firestore", "Error")
+                }
+        }
 
         val sqrt: TextView = findViewById<TextView>(R.id.b_sqrt)
         val log2: TextView = findViewById<TextView>(R.id.b_log2)
@@ -225,6 +281,19 @@ class MainActivity : AppCompatActivity() {
                     result.text = "Error"
                 }
             }
+            historyRef.update(
+                hashMapOf(
+                    history_counter.toString() to optext.toString(),
+                    // Другие поля вашей записи истории
+                ) as Map<String, String>
+            )
+                .addOnSuccessListener {
+                    // Успешно добавлено новое поле
+                }
+                .addOnFailureListener { e ->
+                    // Обработка ошибки
+                }
+            history_counter++
         }
 
         plus.setOnClickListener { operation.append("+") }
