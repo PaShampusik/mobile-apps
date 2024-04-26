@@ -1,25 +1,114 @@
 package com.example.calculator
 
 import android.content.Context
+import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.util.Log
+import android.view.MenuItem
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.drawerlayout.widget.DrawerLayout
+import com.google.firebase.firestore.FirebaseFirestore
 import net.objecthunter.exp4j.ExpressionBuilder
 import kotlin.math.sqrt
+import android.widget.Switch
+
+
 
 class MainActivity : AppCompatActivity() {
 
+    private var drawerLayout: DrawerLayout? = null
+    private var drawerToggle: ActionBarDrawerToggle? = null
     private var sensorManager: SensorManager? = null
     private var acceleration = 0f
     private var currentAcceleration = 0f
     private var lastAcceleration = 0f
 
+    private lateinit var themeSwitch: Switch
     private lateinit var result: TextView
     private lateinit var operation: TextView
+
+    private var isDarkTheme: Boolean = false
+    var db = FirebaseFirestore.getInstance()
+    var themeRef = db.collection("themes").document("userTheme")
+
+    private fun setThemeColors(isDarkTheme: Boolean) {
+        val primaryColor: Int
+        val secondaryColor: Int
+        val textColor: Int
+        if (isDarkTheme) {
+            primaryColor = resources.getColor(R.color.black)
+            secondaryColor = resources.getColor(R.color.theme_dark_secondary)
+            textColor = resources.getColor(R.color.white)
+        } else {
+            primaryColor = resources.getColor(R.color.white)
+            secondaryColor = resources.getColor(R.color.white)
+            textColor = resources.getColor(R.color.black)
+        }
+
+        // Установка цвета статус-бара
+        val window = window
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.statusBarColor = primaryColor
+
+
+        // Применение цветов к элементам пользовательского интерфейса
+        val root_layout = findViewById<LinearLayout>(R.id.root_layout)
+        root_layout.setBackgroundColor(primaryColor)
+        val operations_layout = findViewById<LinearLayout>(R.id.operations_layout)
+        operations_layout.setBackgroundColor(secondaryColor)
+        setTextColor(root_layout, textColor)
+        if (!isDarkTheme) {
+            setBackgroundColor(root_layout, resources.getColor(R.color.white_theme_numbers))
+        }
+    }
+
+    private fun setTextColor(viewGroup: ViewGroup, textColor: Int) {
+        val childCount = viewGroup.childCount
+        for (i in 0 until childCount) {
+            val childView = viewGroup.getChildAt(i)
+            if (childView is TextView) {
+                childView.setTextColor(textColor)
+            } else if (childView is ViewGroup) {
+                setTextColor(childView, textColor) // Рекурсивный вызов для дочернего ViewGroup
+
+            }
+        }
+    }
+
+    private fun setBackgroundColor(viewGroup: ViewGroup, backgroundColor: Int) {
+        val childCount = viewGroup.childCount
+        for (i in 0 until childCount) {
+            val childView = viewGroup.getChildAt(i)
+            if (childView is TextView) {
+                if(childView.id == R.id.b_one || childView.id == R.id.b_two || childView.id == R.id.b_three || childView.id == R.id.b_four || childView.id == R.id.b_fife || childView.id == R.id.b_six || childView.id == R.id.b_seven || childView.id == R.id.b_eight || childView.id == R.id.b_nine || childView.id == R.id.b_zero || childView.id == R.id.b_zeros || childView.id == R.id.b_point || childView.id == R.id.b_equal)
+                {
+                    if(childView.id == R.id.b_equal){
+                    }else{
+                        childView.setBackgroundColor(backgroundColor)
+                    }
+                }
+                childView.setBackgroundColor(resources.getColor(R.color.white_theme_sci))
+            } else if (childView is ViewGroup) {
+                setTextColor(childView, backgroundColor) // Рекурсивный вызов для дочернего ViewGroup
+
+            }
+        }
+    }
+
+    fun isDarkThemeEnabled(context: Context): Boolean {
+        val currentNightMode =
+            context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return currentNightMode == Configuration.UI_MODE_NIGHT_YES
+    }
 
     private val sensorListener: SensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
@@ -45,13 +134,37 @@ class MainActivity : AppCompatActivity() {
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        themeSwitch = findViewById(R.id.themeSwitch)
+
+        themeRef.get().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val document = task.result
+                if (document.exists()) {
+                    var isDarkTheme = document.getBoolean("isDarkTheme")
+                    if (isDarkTheme != null) {
+                        setThemeColors(isDarkTheme)
+                        themeSwitch.isChecked = isDarkTheme
+                    }else{
+                        isDarkTheme = isDarkThemeEnabled(this);
+                        setThemeColors(isDarkTheme)
+                    }
+
+                }
+            } else {
+                Log.e("Firestore", "Error getting isDarkTheme", task.exception)
+            }
+        }
+
+        themeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            isDarkTheme = isChecked
+            setThemeColors(isChecked)
+        }
 
         result = findViewById<TextView>(R.id.result)
         operation = findViewById<TextView>(R.id.operation)
@@ -173,5 +286,20 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         sensorManager!!.unregisterListener(sensorListener)
         super.onPause()
+    }
+
+    override fun onStop() {
+        sensorManager!!.unregisterListener(sensorListener)
+        themeRef
+            .update("isDarkTheme", isDarkTheme)
+            .addOnSuccessListener { Log.d("Firestore", "isDarkTheme updated successfully") }
+            .addOnFailureListener { e ->
+                Log.e(
+                    "Firestore",
+                    "Error updating isDarkTheme",
+                    e
+                )
+            }
+        super.onStop()
     }
 }

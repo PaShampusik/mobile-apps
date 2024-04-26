@@ -3,4 +3,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="color_equal">#f7550f</color>
+    <color name="white_theme_numbers">#9f9ca6</color>
+    <color name="white_theme_sci">#686e7a</color>
+    <color name="theme_dark_primary">#000000</color>
+    <color name="theme_dark_secondary">#111111</color>
 </resources>

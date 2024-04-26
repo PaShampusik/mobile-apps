@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"  android:orientation="vertical"
@@ -13,6 +14,13 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical">
+        <Switch
+            android:id="@+id/themeSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:textOff="Light"
+            android:textOn="Dark" />
     <TextView
         android:id="@+id/operation"
         android:layout_width="match_parent"
@@ -43,6 +51,7 @@
 
 
     <LinearLayout
+        android:id="@+id/operations_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -105,10 +114,9 @@
             </TextView>
 
             <TextView
-                style = "@style/Operations"
-                android:text="back"
-                android:id="@+id/b_back">
-            </TextView>
+                android:id="@+id/b_back"
+                style="@style/Operations"
+                android:text="back"></TextView>
 
             <TextView
                 style = "@style/Operations"
@@ -270,4 +278,5 @@
             </TextView>
         </LinearLayout>
     </LinearLayout>
+
 </LinearLayout>
