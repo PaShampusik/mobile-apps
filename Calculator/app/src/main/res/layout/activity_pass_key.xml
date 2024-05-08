@@ -1,0 +1,44 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/passKeyEditText"
+        android:layout_width="match_parent"
+        android:layout_height="119dp"
+        android:hint="Enter Pass Key"
+        android:inputType="textPassword" />
+
+    <EditText
+        android:id="@+id/confirmPassKeyEditText"
+        android:layout_width="match_parent"
+        android:layout_height="115dp"
+        android:hint="Confirm Pass Key"
+        android:inputType="textPassword" />
+
+    <CheckBox
+        android:id="@+id/resetPassKeyCheckBox"
+        android:layout_width="393dp"
+        android:layout_height="wrap_content"
+        android:text="Reset Pass Key" />
+
+    <Button
+        android:id="@+id/setupButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Confirm/setup Up Pass Key" />
+
+    <Button
+        android:id="@+id/finger"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fingerprint authentication" />
+
+    <Button
+        android:id="@+id/skipButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Skip Pass Key" />
+
+</LinearLayout>

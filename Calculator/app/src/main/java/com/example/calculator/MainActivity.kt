@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent.getActivity
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -203,27 +204,39 @@ class MainActivity : AppCompatActivity() {
         val button = findViewById<Button>(R.id.history)
 
 // Привяжите листенер к кнопке
-        button.setOnClickListener {
-            historyRef.get()
-                .addOnSuccessListener { documentSnapshot ->
-                    if (documentSnapshot.exists()) {
-                        val operationsData = documentSnapshot.data
-                        // Перебор всех записей
-                        if (operationsData != null) {
-                            for ((key, value) in operationsData) {
-                                if (key.toString() == (history_counter - 1).toString()){
-                                    operation.text = value.toString()
+        val passKey = intent.getBooleanExtra("PASS_KEY", false)
+        if (passKey) {
+            button.setText("History")
+            button.setOnClickListener {
+                historyRef.get()
+                    .addOnSuccessListener { documentSnapshot ->
+                        if (documentSnapshot.exists()) {
+                            val operationsData = documentSnapshot.data
+                            // Перебор всех записей
+                            if (operationsData != null) {
+                                for ((key, value) in operationsData) {
+                                    if (key.toString() == (history_counter - 1).toString()){
+                                        operation.text = value.toString()
+                                    }
                                 }
                             }
+                        } else {
+                            Log.e("Firestore", "Error getting document")
                         }
-                    } else {
-                        Log.e("Firestore", "Error getting document")
                     }
-                }
-                .addOnFailureListener { exception ->
-                    Log.e("Firestore", "Error")
-                }
+                    .addOnFailureListener { exception ->
+                        Log.e("Firestore", "Error")
+                    }
+            }
+        }else{
+            button.setText("Authorize")
+            button.setOnClickListener {
+                val intent = Intent(this, PassKeySetupActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
         }
+
 
         val sqrt: TextView = findViewById<TextView>(R.id.b_sqrt)
         val log2: TextView = findViewById<TextView>(R.id.b_log2)
